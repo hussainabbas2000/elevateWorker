@@ -35,7 +35,7 @@ def poll():
             text=True,
             bufsize=1
         )
-
+        print("Here", process)
         for line in process.stdout:
             print(line, end='')
 
