@@ -1,18 +1,12 @@
 import time
 import subprocess
 from supabase import create_client
-from dotenv import load_dotenv
 import os
 
-load_dotenv()
+SUPABASE_URL = os.environ["SUPABASE_URL"]
+SUPABASE_ANON_KEY = os.environ["SUPABASE_ANON_KEY"]
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-
-supabase = create_client(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-)
+supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 def poll():
     print("🔎 Polling for new call jobs...")
@@ -34,7 +28,6 @@ def poll():
     print(f"📞 Calling {phone}")
 
     try:
-        # Capture output in real-time
         process = subprocess.Popen(
             ["cartesia", "call", phone],
             stdout=subprocess.PIPE,
@@ -42,13 +35,12 @@ def poll():
             text=True,
             bufsize=1
         )
-        
-        # Print logs as they come in
+
         for line in process.stdout:
             print(line, end='')
-        
+
         process.wait()
-        
+
         if process.returncode == 0:
             supabase.table("voice_call_jobs").update({
                 "status": "completed"
@@ -60,6 +52,11 @@ def poll():
     except Exception as e:
         print(f"❌ Error: {e}")
 
-while True:
-    poll()
-    time.sleep(3)
+if __name__ == "__main__":
+    while True:
+        try:
+            poll()
+            time.sleep(3)
+        except Exception as e:
+            print(f"🔥 Worker crashed: {e}, restarting in 5s...")
+            time.sleep(5)
