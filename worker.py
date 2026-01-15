@@ -2,7 +2,8 @@ import time
 import subprocess
 from supabase import create_client
 import os
-
+import shutil
+print("cartesia in PATH:", shutil.which("cartesia"))
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_ANON_KEY = os.environ["SUPABASE_ANON_KEY"]
 
