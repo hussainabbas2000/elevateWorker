@@ -5,7 +5,8 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir cartesia supabase
+RUN pip install cartesia && \
+    which cartesia || echo "cartesia not in PATH"
 
 WORKDIR /elrevateWorker
 COPY . .
