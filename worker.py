@@ -10,6 +10,9 @@ supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 def poll():
     print("🔎 Polling for new call jobs...")
+    subprocess.run(["cartesia", "--version"], check=True)
+    print("Cartesia home:", os.environ.get("CARTESIA_HOME"))
+    print("Files:", os.listdir("/app/.cartesia"))
     res = (
         supabase
         .table("voice_call_jobs")
