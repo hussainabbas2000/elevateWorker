@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install cartesia && \
+RUN pip install cartesia supabase && \
     which cartesia || echo "cartesia not in PATH"
 
 WORKDIR /elevateWorker
