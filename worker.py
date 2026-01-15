@@ -3,7 +3,7 @@ import subprocess
 from supabase import create_client
 import os
 import shutil
-
+import sys
 print("cartesia in PATH:", shutil.which("cartesia"))
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_ANON_KEY = os.environ["SUPABASE_ANON_KEY"]
@@ -13,7 +13,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 def poll():
     print("🔎 Polling for new call jobs...")
-    subprocess.run(["cartesia", "--version"], check=True)
+    subprocess.run([sys.executable, "-m", "cartesia", "--version"], check=True)
     print("Cartesia home:", os.environ.get("CARTESIA_HOME"))
     print("Files:", os.listdir("/app/.cartesia"))
     res = (
