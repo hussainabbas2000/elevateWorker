@@ -3,6 +3,7 @@ import subprocess
 from supabase import create_client
 import os
 import shutil
+
 print("cartesia in PATH:", shutil.which("cartesia"))
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_ANON_KEY = os.environ["SUPABASE_ANON_KEY"]
@@ -33,11 +34,12 @@ def poll():
 
     try:
         process = subprocess.Popen(
-            ["python", "-m", "cartesia", "call", phone],
+            ["cartesia", "call", phone],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
             bufsize=1,
+            env={**os.environ, "CARTESIA_HOME": "/app/.cartesia"},
         )
         print("Here", process)
         for line in process.stdout:
