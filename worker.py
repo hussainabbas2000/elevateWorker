@@ -1,10 +1,23 @@
+import sys
 import time
 import subprocess
 from supabase import create_client
 import os
-import shutil
-import sys
-print("cartesia in PATH:", shutil.which("cartesia"))
+import site
+
+print("🔍 Debugging paths...")
+print("Python executable:", sys.executable)
+print("Site packages:", site.getsitepackages())
+
+# Find cartesia in site-packages bin
+cartesia_path = os.path.join(os.path.dirname(sys.executable), "cartesia")
+print("Expected cartesia path:", cartesia_path)
+print("Exists?", os.path.exists(cartesia_path))
+
+# List what's in the bin directory
+bin_dir = os.path.dirname(sys.executable)
+print("Files in bin:", os.listdir(bin_dir))
+
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_ANON_KEY = os.environ["SUPABASE_ANON_KEY"]
 
@@ -13,9 +26,10 @@ supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 def poll():
     print("🔎 Polling for new call jobs...")
-    subprocess.run([sys.executable, "-m", "cartesia", "--version"], check=True)
-    print("Cartesia home:", os.environ.get("CARTESIA_HOME"))
-    print("Files:", os.listdir("/app/.cartesia"))
+    
+    # Try using full path
+    subprocess.run([cartesia_path, "--version"], check=True)
+    
     res = (
         supabase.table("voice_call_jobs")
         .select("*")
@@ -34,13 +48,12 @@ def poll():
 
     try:
         process = subprocess.Popen(
-            [sys.executable, "-m", "cartesia", "call", phone],
+            [cartesia_path, "call", phone],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
             bufsize=1,
         )
-        print("Here", process)
         for line in process.stdout:
             print(line, end="")
 
