@@ -34,12 +34,11 @@ def poll():
 
     try:
         process = subprocess.Popen(
-            ["cartesia", "call", phone],
+            [sys.executable, "-m", "cartesia", "call", phone],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
             bufsize=1,
-            env={**os.environ, "CARTESIA_HOME": "/app/.cartesia"},
         )
         print("Here", process)
         for line in process.stdout:
