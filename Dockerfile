@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
 RUN pip install cartesia && \
     which cartesia || echo "cartesia not in PATH"
 
-WORKDIR /elrevateWorker
+WORKDIR /elevateWorker
 COPY . .
 
 # 🔥 CRITICAL
