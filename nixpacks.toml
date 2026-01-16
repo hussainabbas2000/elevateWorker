@@ -1,0 +1,13 @@
+[phases.setup]
+aptPkgs = ["curl"]
+
+[phases.install]
+cmds = [
+  "pip install -r requirements.txt",
+  "chmod +x install_cartesia.sh",
+  "./install_cartesia.sh"
+]
+
+[variables]
+PATH = "/root/.cartesia/bin:/usr/local/bin:/usr/bin"
+CARTESIA_API_KEY = "${CARTESIA_API_KEY}"
