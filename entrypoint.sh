@@ -1,18 +1,25 @@
 #!/bin/bash
 set -e
 
-echo "🔐 Writing Cartesia credentials..."
+echo "🔐 Writing Cartesia credentials (XDG config)..."
 
-mkdir -p /root/.cartesia
+CONFIG_DIR="/root/.config/cartesia"
+CONFIG_FILE="$CONFIG_DIR/config.json"
 
-cat <<EOF > /root/.cartesia/credentials.json
+mkdir -p "$CONFIG_DIR"
+
+cat <<EOF > "$CONFIG_FILE"
 {
   "api_key": "${CARTESIA_API_KEY}"
 }
 EOF
 
-chmod 600 /root/.cartesia/credentials.json
+chmod 600 "$CONFIG_FILE"
 
-echo "✅ Cartesia credentials written"
+echo "✅ Cartesia credentials written to $CONFIG_FILE"
 
+echo "🔍 Verifying auth..."
+/root/.cartesia/bin/cartesia auth status || true
+
+echo "🚀 Starting worker..."
 exec python worker.py
