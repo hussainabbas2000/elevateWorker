@@ -20,6 +20,7 @@ SUPABASE_ANON_KEY = os.environ["SUPABASE_ANON_KEY"]
 
 supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
+print("CARTESIA_API_KEY set?", bool(os.getenv("CARTESIA_API_KEY")))
 
 def poll():
     print("🔎 Polling for new call jobs...")
