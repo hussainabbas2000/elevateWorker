@@ -1,22 +1,19 @@
-import sys
 import time
 import subprocess
-from supabase import create_client
 import os
-import site
+import shutil
+from supabase import create_client
 
-print("🔍 Debugging paths...")
-print("Python executable:", sys.executable)
-print("Site packages:", site.getsitepackages())
+print("🔍 Booting worker...")
 
-# Find cartesia in site-packages bin
-cartesia_path = os.path.join(os.path.dirname(sys.executable), "cartesia")
-print("Expected cartesia path:", cartesia_path)
-print("Exists?", os.path.exists(cartesia_path))
+cartesia_path = shutil.which("cartesia") or "/root/.cartesia/bin/cartesia"
 
-# List what's in the bin directory
-bin_dir = os.path.dirname(sys.executable)
-print("Files in bin:", os.listdir(bin_dir))
+print("Using cartesia at:", cartesia_path)
+
+if not os.path.exists(cartesia_path):
+    raise RuntimeError("❌ Cartesia CLI not found")
+
+subprocess.run([cartesia_path, "--version"], check=True)
 
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_ANON_KEY = os.environ["SUPABASE_ANON_KEY"]
@@ -26,10 +23,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 def poll():
     print("🔎 Polling for new call jobs...")
-    
-    # Try using full path
-    subprocess.run([cartesia_path, "--version"], check=True)
-    
+
     res = (
         supabase.table("voice_call_jobs")
         .select("*")
@@ -46,29 +40,26 @@ def poll():
 
     print(f"📞 Calling {phone}")
 
-    try:
-        process = subprocess.Popen(
-            [cartesia_path, "call", phone],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-        )
-        for line in process.stdout:
-            print(line, end="")
+    process = subprocess.Popen(
+        [cartesia_path, "call", phone],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
 
-        process.wait()
+    for line in process.stdout:
+        print(line, end="")
 
-        if process.returncode == 0:
-            supabase.table("voice_call_jobs").update({"status": "completed"}).eq(
-                "id", job["id"]
-            ).execute()
-            print("✅ Call completed")
-        else:
-            print(f"❌ Call failed with code {process.returncode}")
+    process.wait()
 
-    except Exception as e:
-        print(f"❌ Error: {e}")
+    if process.returncode == 0:
+        supabase.table("voice_call_jobs").update(
+            {"status": "completed"}
+        ).eq("id", job["id"]).execute()
+        print("✅ Call completed")
+    else:
+        print(f"❌ Call failed ({process.returncode})")
 
 
 if __name__ == "__main__":
@@ -77,5 +68,5 @@ if __name__ == "__main__":
             poll()
             time.sleep(3)
         except Exception as e:
-            print(f"🔥 Worker crashed: {e}, restarting in 5s...")
+            print(f"🔥 Worker crashed: {e}")
             time.sleep(5)
