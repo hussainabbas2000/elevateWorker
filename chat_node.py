@@ -6,7 +6,7 @@ Immediate call termination with async background finalization
 import asyncio
 import os
 from typing import AsyncGenerator, Union
-from dotenv import load_dotenv
+
 from loguru import logger
 
 from line.events import (
@@ -32,7 +32,7 @@ from config import DEFAULT_TEMPERATURE
 # Environment
 # -------------------------------------------------------------------
 
-load_dotenv()
+
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
