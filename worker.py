@@ -1,73 +1,99 @@
+import os
 import time
 import subprocess
-import os
-import shutil
+import signal
 from supabase import create_client
+from dotenv import load_dotenv
 
-print("🔍 Booting worker...")
-
-cartesia_path = shutil.which("cartesia") or "/root/.cartesia/bin/cartesia"
-
-print("Using cartesia at:", cartesia_path)
-
-if not os.path.exists(cartesia_path):
-    raise RuntimeError("❌ Cartesia CLI not found")
-
-subprocess.run([cartesia_path, "--version"], check=True)
+load_dotenv()
+# ---------------- CONFIG ----------------
 
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_ANON_KEY = os.environ["SUPABASE_ANON_KEY"]
+CARTESIA_API_KEY = os.environ["CARTESIA_API_KEY"]
+
+GOODBYE_PHRASES = [
+    "bye",
+    "goodbye",
+    "talk to you later",
+    "see you",
+    "thanks, bye",
+]
+
+# ----------------------------------------
 
 supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-print("CARTESIA_API_KEY set?", bool(os.getenv("CARTESIA_API_KEY")))
+
+def start_call(phone_number: str):
+    env = os.environ.copy()
+    env["CARTESIA_API_KEY"] = CARTESIA_API_KEY
+
+    print(f"📞 Calling {phone_number}")
+
+    return subprocess.Popen(
+        ["cartesia", "call", phone_number],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        env=env,
+    )
+
+
+def should_end_call(line: str) -> bool:
+    lower = line.lower()
+    return any(phrase in lower for phrase in GOODBYE_PHRASES)
+
 
 def poll():
     print("🔎 Polling for new call jobs...")
 
-    res = (
-        supabase.table("voice_call_jobs")
-        .select("*")
-        .eq("status", "pending")
-        .limit(1)
-        .execute()
-    )
+    while True:
+        res = (
+            supabase
+            .table("voice_call_jobs")
+            .select("*")
+            .eq("status", "pending")
+            .limit(1)
+            .execute()
+        )
 
-    if not res.data:
-        return
+        if not res.data:
+            time.sleep(5)
+            continue
 
-    job = res.data[0]
-    phone = job["phone"]
+        job = res.data[0]
+        phone = job["phone"]
 
-    print(f"📞 Calling {phone}")
-
-    process = subprocess.Popen(
-        [cartesia_path, "call", phone],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-    )
-
-    for line in process.stdout:
-        print(line, end="")
-
-    process.wait()
-
-    if process.returncode == 0:
+        # mark as processing
         supabase.table("voice_call_jobs").update(
-            {"status": "completed"}
+            {"status": "processing"}
         ).eq("id", job["id"]).execute()
-        print("✅ Call completed")
-    else:
-        print(f"❌ Call failed ({process.returncode})")
+
+        proc = start_call(phone)
+
+        try:
+            for line in proc.stdout:
+                print(line.strip())
+
+                if should_end_call(line):
+                    print("👋 Goodbye detected — ending call")
+                    proc.send_signal(signal.SIGINT)
+                    break
+
+        except Exception as e:
+            print("⚠️ Error during call:", e)
+
+        finally:
+            if proc.poll() is None:
+                proc.terminate()
+
+            supabase.table("voice_call_jobs").update(
+                {"status": "completed"}
+            ).eq("id", job["id"]).execute()
+
+        time.sleep(2)
 
 
 if __name__ == "__main__":
-    while True:
-        try:
-            poll()
-            time.sleep(3)
-        except Exception as e:
-            print(f"🔥 Worker crashed: {e}")
-            time.sleep(5)
+    poll()

@@ -20,6 +20,7 @@ async def handle_new_call(system: VoiceAgentSystem, call_request: CallRequest):
         f"agent.introduction: {call_request.agent.introduction[:100] if getattr(call_request.agent, 'introduction', None) else None}. "
     )
 
+    
     # Main conversation node (LangChain-powered)
     conversation_node = ChatNode(
         system_prompt=call_request.agent.system_prompt or SYSTEM_PROMPT,
