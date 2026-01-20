@@ -27,7 +27,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from supabase import create_client
 from config import DEFAULT_TEMPERATURE
-
+from config import SYSTEM_PROMPT_2
 # -------------------------------------------------------------------
 # Environment
 # -------------------------------------------------------------------
@@ -113,10 +113,29 @@ class ChatNode(ReasoningNode):
                 .execute()
             )
 
-        firstName = res.data[0]["first_name"] if res.data else None
-        lastName = res.data[0]["last_name"] if res.data else None
-        system_prompt = f"Context: User's name is {firstName}" + system_prompt
-        super().__init__(system_prompt, max_context_length)
+        res2 = (
+            supabase.table("voice_call_jobs")
+            .select()
+            .eq("phone", phone_number)
+            .limit(1)
+            .execute()
+        )
+        if res2.data and res2.data[0]["referred_by"] == True:
+            invitee_data = (
+                supabase
+                .table("invitees")
+                .select()
+                .eq("phone", phone_number)
+                .limit(1)
+                .execute()
+            )
+            if invitee_data.data:
+                system_prompt = "Invitee Name: " + invitee_data.data[0]["first_name"] + "\nInvitee achievements context : " + invitee_data.data[0]["achievements"] + "\n" + SYSTEM_PROMPT_2
+        else:
+            firstName = res.data[0]["first_name"] if res.data else None
+            lastName = res.data[0]["last_name"] if res.data else None
+            system_prompt = f"Context: User's name is {firstName}" + system_prompt
+            super().__init__(system_prompt, max_context_length)
 
         self.llm = ChatGoogleGenerativeAI(
             model=model,
