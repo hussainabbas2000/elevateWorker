@@ -27,7 +27,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from supabase import create_client
 from config import DEFAULT_TEMPERATURE
-from config import SYSTEM_PROMPT_2
+
 # -------------------------------------------------------------------
 # Environment
 # -------------------------------------------------------------------
@@ -135,7 +135,8 @@ class ChatNode(ReasoningNode):
             firstName = res.data[0]["first_name"] if res.data else None
             lastName = res.data[0]["last_name"] if res.data else None
             system_prompt = f"Context: User's name is {firstName}" + system_prompt
-            super().__init__(system_prompt, max_context_length)
+            
+        super().__init__(system_prompt, max_context_length)
 
         self.llm = ChatGoogleGenerativeAI(
             model=model,
