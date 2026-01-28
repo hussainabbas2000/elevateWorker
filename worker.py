@@ -3,9 +3,9 @@ import time
 import subprocess
 import signal
 from supabase import create_client
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-load_dotenv()
+# load_dotenv()
 # ---------------- CONFIG ----------------
 
 SUPABASE_URL = os.environ["SUPABASE_URL"]
